@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { usePostStore } from '../store/postStore';
 import { useDebounce } from '../hooks/useDebounce';
 
@@ -9,7 +10,6 @@ export default function HomePage() {
 
     useEffect(() => { loadPosts(); }, [loadPosts]);
 
-    // Фильтрация на клиенте
     const filteredPosts = posts.filter(post =>
         post.title.toLowerCase().includes(debouncedSearch.toLowerCase())
     );
@@ -38,17 +38,14 @@ export default function HomePage() {
             ) : (
                 filteredPosts.map(post => (
                     <article key={post.id} className="card">
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
-                            <a href={`/post/${post.id}`} style={{ textDecoration: 'none', color: 'inherit', flex: 1 }}>
-                                <h3>{post.title}</h3>
-                            </a>
-                            <button
-                                className="btn btn-danger"
-                                style={{ padding: '4px 10px', fontSize: '0.85rem', marginLeft: '1rem' }}
-                                onClick={() => removePost(post.id)}
-                            >
-                                🗑 Удалить
-                            </button>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                            <Link to={`/post/${post.id}`} style={{ textDecoration: 'none', color: 'inherit', flex: 1 }}>
+                                <h3 style={{ margin: 0 }}>{post.title}</h3>
+                            </Link>
+                            <div style={{ display: 'flex', gap: '8px' }}>
+                                <Link to={`/edit/${post.id}`} className="btn btn-ghost" style={{ padding: '4px 8px', fontSize: '0.85rem' }}>✏️</Link>
+                                <button className="btn btn-danger" style={{ padding: '4px 8px', fontSize: '0.85rem' }} onClick={() => removePost(post.id)}>🗑</button>
+                            </div>
                         </div>
                         <p className="meta">{post.author} • {post.date}</p>
                         <p>{post.content.slice(0, 150)}...</p>

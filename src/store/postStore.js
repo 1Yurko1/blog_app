@@ -1,9 +1,9 @@
 import { create } from 'zustand';
-import { fetchPosts, createPost, deletePost } from '../services/api';
+import { fetchPosts, createPost, deletePost, updatePost } from '../services/api';
 
 export const usePostStore = create((set) => ({
     posts: [],
-    status: 'idle', // idle | loading | success | error
+    status: 'idle',
     error: null,
 
     loadPosts: async () => {
@@ -20,17 +20,29 @@ export const usePostStore = create((set) => ({
         set({ status: 'loading', error: null });
         try {
             const newPost = await createPost(data);
-            set((state) => ({ posts: [newPost, ...state.posts], status: 'success' }));
+            set((s) => ({ posts: [newPost, ...s.posts], status: 'success' }));
         } catch (err) {
-            set({ status: 'error', error: err.message || 'Ошибка создания поста' });
+            set({ status: 'error', error: err.message || 'Ошибка создания' });
+        }
+    },
+
+    updatePost: async (id, data) => {
+        set({ status: 'loading', error: null });
+        try {
+            const updated = await updatePost(id, data);
+            set(state => ({
+                posts: state.posts.map(p => p.id === Number(id) ? updated : p),
+                status: 'success'
+            }));
+        } catch (err) {
+            set({ status: 'error', error: err.message });
         }
     },
 
     removePost: async (id) => {
-        set({ status: 'loading', error: null });
         try {
             await deletePost(id);
-            set((state) => ({ posts: state.posts.filter((p) => p.id !== id), status: 'success' }));
+            set((s) => ({ posts: s.posts.filter((p) => p.id !== id) }));
         } catch (err) {
             set({ status: 'error', error: err.message || 'Ошибка удаления' });
         }

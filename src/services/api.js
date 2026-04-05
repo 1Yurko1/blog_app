@@ -23,3 +23,12 @@ export const deletePost = async (id) => {
     await delay();
     posts = posts.filter(p => p.id !== id);
 };
+
+export const updatePost = async (id, data) => {
+    await delay();
+    const index = posts.findIndex(p => p.id === Number(id));
+    if (index === -1) throw new Error('Пост не найден');
+
+    posts[index] = { ...posts[index], ...data };
+    return posts[index];
+};
