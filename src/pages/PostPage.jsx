@@ -1,60 +1,40 @@
-import { useEffect } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { useNavigate } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { usePostStore } from '../store/postStore';
+import { useEffect, useState } from 'react';
+import CommentForm from '../components/CommentForm';
+import CommentList from '../components/CommentList';
 
-const postSchema = z.object({
-    title: z.string().min(3, 'Минимум 3 символа'),
-    content: z.string().min(10, 'Минимум 10 символов'),
-    author: z.string().min(2, 'Минимум 2 символа')
-});
+export default function PostPage() {
+    const { id } = useParams();
+    const { posts, loadPosts, addComment } = usePostStore();
+    const [isSubmittingComment, setIsSubmittingComment] = useState(false);
 
-export default function PostForm({ mode, initialData }) {
-    const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm({
-        resolver: zodResolver(postSchema),
-        defaultValues: { title: '', content: '', author: '' }
-    });
+    const post = posts.find(p => p.id === Number(id));
 
-    const { addPost, updatePost } = usePostStore();
-    const navigate = useNavigate();
+    useEffect(() => { loadPosts(); }, [loadPosts]);
 
-    useEffect(() => {
-        if (mode === 'edit' && initialData) {
-            reset(initialData);
-        }
-    }, [initialData, mode, reset]);
+    if (!post) return <div className="state-msg">⏳ Загрузка...</div>;
 
-    const onSubmit = async (data) => {
-        if (mode === 'create') await addPost(data);
-        if (mode === 'edit') await updatePost(initialData.id, data);
-        navigate('/');
+    const handleCommentSubmit = async (text, author) => {
+        setIsSubmittingComment(true);
+        await addComment(post.id, text, author);
+        setIsSubmittingComment(false);
     };
 
     return (
-        <form onSubmit={handleSubmit(onSubmit)}>
-            <div className="form-group">
-                <label className="form-label">Заголовок</label>
-                <input className="form-input" {...register('title')} placeholder="О чём напишем?" />
-                {errors.title && <p className="form-error">{errors.title.message}</p>}
+        <div className="card">
+            <Link to="/" className="btn btn-ghost" style={{ marginBottom: '1rem', display: 'inline-block' }}>← Назад к списку</Link>
+
+            <p className="meta">{post.author} • {post.date}</p>
+            <h1 style={{ marginBottom: '1.5rem' }}>{post.title}</h1>
+
+            <div style={{ fontSize: '1.1rem', lineHeight: '1.7', whiteSpace: 'pre-wrap', marginBottom: '2rem' }}>
+                {post.content}
             </div>
 
-            <div className="form-group">
-                <label className="form-label">Текст</label>
-                <textarea className="form-input" rows={6} {...register('content')} placeholder="Подробности..." />
-                {errors.content && <p className="form-error">{errors.content.message}</p>}
-            </div>
-
-            <div className="form-group">
-                <label className="form-label">Автор</label>
-                <input className="form-input" {...register('author')} placeholder="Ваше имя" />
-                {errors.author && <p className="form-error">{errors.author.message}</p>}
-            </div>
-
-            <button type="submit" disabled={isSubmitting} className="btn btn-primary" style={{ width: '100%' }}>
-                {isSubmitting ? 'Сохранение...' : mode === 'create' ? 'Опубликовать' : 'Обновить'}
-            </button>
-        </form>
+            {/* ✅ Секция комментариев */}
+            <CommentList comments={post.comments} />
+            <CommentForm onSubmit={handleCommentSubmit} isSubmitting={isSubmittingComment} />
+        </div>
     );
 }
